@@ -1,0 +1,2 @@
+The repository contains code for solving flow of viscoelastic drop inside constricted channel with sudden contraction. The code solves problem discussed in the paper "Prasad, N. K., Ghosh, S. S., & Dalal, A. (2023). Understanding deformation and breakup tendency of shear-thinning viscoelastic drops in constricted microchannels. Langmuir, 39(34), 11975-11991."
+The repositor also contains library that allows to generate .plt files for post processing with Tecplot.
