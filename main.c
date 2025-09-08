@@ -11,7 +11,6 @@
 #define MUS (BETA*MU0)
 // Relaxation viscoelastic time
 #define LAM 1.
-// Average velocity steady flow
 #include "tecplot.h"
 #include "navier-stokes/centered.h"
 #include "log-conform.h"
@@ -19,7 +18,7 @@
 #include "two-phase.h"
 #include "tension.h"
 #include "tag.h"
-//#include "axi.h"
+//#include "axi.h" 
 
 
 #define L2 5.
@@ -36,8 +35,7 @@
 #define D_dim 6.0 //dimensional dia of the HeLa cell
 #define D1_dim 24.0  //dimensional dia of the entry region
 #define D2_dim 4.0  //dimensional dia of the exit region
-#define L_dim (l1_dim+l3_dim+l5_dim)  //total length of the domain in the x direction
-//all lengths are defined in micrometers
+#define L_dim (l1_dim+l3_dim+l5_dim)  //total length of the domain in the x directions
 //now we non dimensionalise them
 //#define L 1.0  //total length of the domain in the x direction
 #define l1 (l1_dim*1.0/L_dim) //non dimensional length of the entry region 
@@ -84,7 +82,7 @@ int main()
   //u.n[right] = neumann(0.0);
   u.t[left] = dirichlet(0.0);
    //u.t[right] = dirichlet(0.0);
-  //f[bottom] = 0.0;
+  //f[bottom] = 0.0; // for hydrophobic walls
   //f[top] = 0.0;
   u.t[top] = dirichlet(0.0);
   u.t[bottom] = dirichlet(0.0);
