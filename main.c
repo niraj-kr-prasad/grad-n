@@ -2,7 +2,7 @@
 
 // Total viscoelastic viscosity 
 #define MU0 1.  
-#define MUR 2.0       
+#define MUR 1.        
 // Ratio of the solvent viscosity to the total viscosity
 #define BETA (0.11)
 // Polymer viscosity
@@ -24,18 +24,18 @@
 
 #define L2 5.
 #define M 1.0  
-#define Ca 0.3    // Capillary number
-#define Deb 1.0   // Deborah number
-#define Re 0.15 // Reynold number
+#define Ca 0.1    // Capillary number
+#define Deb 1   // Deborah number
+#define Re 2. // Reynold number
 #define We (Ca*Re) 
-#define l1_dim 30.0 //dimensional length of the entry region 
+#define l1_dim 40.0 //dimensional length of the entry region 
 //#define l2_dim 34.0 //dimensional length of the entry region - tapering
-#define l3_dim 150.0  //dimensional lenth of the central region
+#define l3_dim 40.0  //dimensional lenth of the central region
 //#define l4_dim 34.0 //dimensional lenth of the exit region - tapering
-#define l5_dim 22.0 //dimensional length of the exit region 
-#define D_dim 2.3 //dimensional dia of the HeLa cell
-#define D1_dim 35.0  //dimensional dia of the entry region
-#define D2_dim 7.0  //dimensional dia of the exit region
+#define l5_dim 40.0 //dimensional length of the exit region 
+#define D_dim 6.0 //dimensional dia of the HeLa cell
+#define D1_dim 24.0  //dimensional dia of the entry region
+#define D2_dim 4.0  //dimensional dia of the exit region
 #define L_dim (l1_dim+l3_dim+l5_dim)  //total length of the domain in the x direction
 //all lengths are defined in micrometers
 //now we non dimensionalise them
@@ -60,7 +60,7 @@
 
 int lev;
 //int MAXLEVEL = 12;
-scalar lam[], mupc[], SD[], TR[];
+scalar lam[], mupc[], SDXX[], SYY[], SXY[], TR[];
 
 
 int main()
@@ -80,9 +80,9 @@ int main()
   rho2 = 1.;
   f.sigma = 1./We;
   p[right] = dirichlet(0.);
-   //p[left] = dirichlet(1.);
+   u.n[left] = dirichlet(1.);
   //u.n[right] = neumann(0.0);
-  u.n[left] = dirichlet(0.39);
+  u.t[left] = dirichlet(0.0);
    //u.t[right] = dirichlet(0.0);
   //f[bottom] = 0.0;
   //f[top] = 0.0;
@@ -91,9 +91,15 @@ int main()
   //u.n[top]= dirichlet(0.0);
   //u.n[bottom] = dirichlet(0.0);
     //p[right] = dirichlet(0.0);
-    SD[left] = neumann(0.);
-    SD[top] = neumann(0.);
-    SD[bottom] = neumann(0.);
+    SDXX[left] = neumann(0.);
+    SDXX[top] = neumann(0.);
+    SDXX[bottom] = neumann(0.);
+      SXY[left] = neumann(0.);
+    SXY[top] = neumann(0.);
+    SXY[bottom] = neumann(0.);
+      SYY[left] = neumann(0.);
+    SYY[top] = neumann(0.);
+    SYY[bottom] = neumann(0.);
   //SD[right] = neumann(0.);
   lev = 10;
   init_grid (1024);
@@ -103,13 +109,15 @@ int main()
 event init (i = 0) 
 
 {  
+ //refine(y < D1/2. && y > -D1/2.  && level<9);
+  //refine((sq(D/2.0) - (sq(x- l1/2.0)+ sq(y))) && level<9);
    mask (y > D1/2 && x<l1 ? top : none);
    mask(y < -D1/2 && x<l1 ? bottom : none);
    mask (y>D2/2 && x>l1 && x<=l1+l3 ? top : none);
    mask (y<-D2/2 && x>=l1 && x<=l1+l3 ? bottom : none);
    mask(y>D1/2 && x>l1+l3 ? top : none);
   mask(y<-D1/2 && x>l1+ l3 ? bottom:none);
-  fraction(f, sq(D/2.0) - (sq(x- l1/4.0)+ sq(y - D1/2.75)));
+   fraction(f, sq(D/2.0) - (sq(x- l1/2.0)+ sq(y)));
 
   foreach()
    u.x[] = 0;
@@ -120,16 +128,18 @@ event TAU(t += 0.001)
     FILE * fp;
 foreach () 
   {
-   SD[] = (tau_p.x.x[] - tau_p.y.y[])*clamp(f[],0,1);
+    SDXX[] = (tau_p.x.x[])*clamp(f[],0,1);
+    SYY[] = (tau_p.y.y[])*clamp(f[],0,1);
+     SXY[] = (tau_p.y.y[])*clamp(f[],0,1);
     TR[] = (trA[])*clamp(f[],0,1);
   }
-  boundary ({SD,TR});
+  boundary ({SDXX,SYY,SXY,TR});
      if (i== 0)
   fp= fopen("Tau.dat","w");
 else
   fp= fopen("Tau.dat","a");
 
-  fprintf (fp, "%g %g %g %g \n", SD, TR);
+  fprintf (fp, "%g %g %g %g \n", SDXX, SYY, SXY, TR);
   fflush(fp);
   fclose(fp);
 
@@ -232,9 +242,9 @@ event adapt (i++) {
 event tecplot_output(t += 0.01;t< 0.5)
 {
   struct OutputTec tec;
-  scalar * list_Q = {u,p,f, SD, TR};
+  scalar * list_Q = {u,p,f, SDXX, SYY, SXY, TR};
   tec.tec_cc = list_copy(list_Q);
-  sprintf(tec.varname,"X Y U V P VoF SD TR");
+  sprintf(tec.varname,"X Y U V P VoF SDXX SDYY SXY TR");
   output_tec(tec,i,t, 1.);
   free(tec.tec_cc);
 }
